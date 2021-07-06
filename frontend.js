@@ -17,9 +17,17 @@ map.addControl(mapTypeControl, kakao.maps.ControlPosition.TOPRIGHT);
 
 map.addControl(zoomControl, kakao.maps.ControlPosition.RIGHT);
 
-// Read address JSON file, place markers on interactive map
+// Coords and Array Variables
+var userCoords;
+var markersPos = [];
+var markersTitle = [];
+var distOfPoints = [];
+var markersInRange = [];
 
+// Read address JSON file, place markers on interactive map
 $.getJSON('./address_dict.json', function(data) {
+	var tempMarkerPos = [];
+	var tempMarkersTitle = [];
 	var geocoder = new kakao.maps.services.Geocoder();
 	for (var address in data) {
 		const currAddress = address;
@@ -27,6 +35,10 @@ $.getJSON('./address_dict.json', function(data) {
 			// if address is valid
 			if (status === kakao.maps.services.Status.OK) {
 				var coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+
+				//console.log(currAddress);
+
+				// Markers for each location
 				var marker = new kakao.maps.Marker({
 					map: map,
 					position: coords,
@@ -35,10 +47,16 @@ $.getJSON('./address_dict.json', function(data) {
 				});
 				marker.setMap(map);
 
+				// Vars of coords denoted La and Ma
+				markersPos.push(marker.getPosition());
+
+				// Title of markers (i.e. Written location in Korean; type is string)
+				markersTitle.push(marker.getTitle().toString());
+
+				// Additional Information about each location
 				var infoWindow = new kakao.maps.InfoWindow({
 				});
-				infoWindow.setContent(data[currAddress]);
-				
+				infoWindow.setContent(data[currAddress]);				
 
 				// if mouse cursor over location
 				kakao.maps.event.addListener(marker, 'click', function() {
@@ -51,7 +69,8 @@ $.getJSON('./address_dict.json', function(data) {
 				});
 			}
 		});
-	}
+	};
+
 });
 
 // import image for current location marker
@@ -73,6 +92,20 @@ if (navigator.geolocation) {
 			message = '<div style="padding:5px;">현재위치</div>';
 
 		displayMarker(currLocation, message);
+
+		userCoords = currLocation;
+
+		var surrounding = new kakao.maps.Circle({
+			center: currLocation,
+			radius: 2500,
+			strokeOpacity: 1
+		});
+		
+		surrounding.setMap(map);
+
+		searchSurroundings(surrounding, markersPos);
+
+
 	});
 } else {
 	// Denied use of Current Location
@@ -80,7 +113,7 @@ if (navigator.geolocation) {
 		message = '<div style="padding:5px;">현재위치 사용 기능이 꺼져있습니다.</div>';
 	
 	displayMarker(defaultPos, message);
-}
+};
 
 // Display Marker for User Position
 function displayMarker(position, message) {
@@ -105,10 +138,50 @@ function displayMarker(position, message) {
 	infoWindow.open(map, marker);
 
 	map.setCenter(position);
-}
+};
 
-// PROGRESS REPORT / TODO LIST:
-// click to assign new location
-// display closest recycling location
+// Helper function for searching surroundings
 
 
+function searchSurroundings(circle, markers) {
+	//var inRange = [];
+	var line = new kakao.maps.Polyline();
+
+	var i;
+
+	for (i = 0; i < markers.length; ++i) {
+		var path = [markers[i], circle.getPosition()];
+		line.setPath(path);
+
+		// distance from center of circle to marker point
+		var distance = line.getLength();
+
+		if (distance < circle.getRadius()) {
+			distOfPoints.push(distance);
+			markersInRange.push(markersTitle[i]);
+		}
+		
+		if (distance < shortest) {
+			shortest = distance;
+			shortestTitle = markersTitle[i];
+		}
+	};
+};
+
+function nearbyAlert() {
+	alert("반경 5km내 수거함 " + distOfPoints.length + "개가 있습니다.");
+};
+
+
+// Code for nearestLoc()
+var shortest = Number.MAX_SAFE_INTEGER;
+var shortestTitle;
+var ind = -1;
+
+
+// Code for nearestLoc()
+function nearestLoc() {
+	//shortestTitle = markersTitle[ind];
+	const adjustedDistance = shortest/1000;
+	alert("가장 가까운 수거함의 주소는 " + shortestTitle + "입니다. 이동 거리는 약 " + adjustedDistance + "km 입니다.");
+};
