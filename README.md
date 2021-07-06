@@ -5,4 +5,5 @@ A simple interactive map with markers of the locations of icepack recycling coll
 # Files
 
 *parse-data.py*: Parses and processes the pdf file data into readable JSON format.
+
 *frontend.js*: Responsible for the interactive map and functions (based on kakaomaps-api). The API key has been blurred out.
